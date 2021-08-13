@@ -30,12 +30,18 @@ class Conv2D_params:
 
     @property
     def n_hidden_layers( self ):
-        return len( self.hidden_layer_sizes ) - 1
+        return len( self.hidden_layer_sizes )
 
-    def get_hidden_layer_sizes_reversed( self ):
-        return self.hidden_layer_sizes[::-1]
+    @property
+    def n_features_layers( self ):
+        return [ self.dimn_tensor.channels ] + self.hidden_layer_sizes
 
-    def get_ksize_reversed( self ):
+    @property
+    def n_features_layers_reversed( self ):
+        return self.n_features_layers[::-1]
+
+    @property
+    def ksize_reversed( self ):
         return self.ksize[::-1]
     
     def get_moduleList( self ):
@@ -43,8 +49,8 @@ class Conv2D_params:
         return nn.ModuleList(
             [
                 nn.Conv2d(
-                    self.hidden_layers_sizes[i],
-                    self.hidden_layers_sizes[i + 1],
+                    self.n_features_layers[i],
+                    self.n_features_layers[i + 1],
                     kernel_size=self.ksize[i],
                     padding=(self.ksize[i] - 1) // 2,
                 )
@@ -57,12 +63,12 @@ class Conv2D_params:
         return nn.ModuleList(
             [
                 nn.Conv2d(
-                    self.hidden_layers_sizes[i],
-                    self.hidden_layers_sizes[i + 1],
-                    kernel_size=self.ksize[i],
-                    padding=(self.ksize[i] - 1) // 2,
+                    self.n_features_layers_reversed[i],
+                    self.n_features_layers_reversed[i + 1],
+                    kernel_size=self.ksize_reversed[i],
+                    padding=(self.ksize_reversed[i] - 1) // 2,
                 )
-                for i in range( self.n_hidden_layers-1 , 0 , -1 )
+                for i in range( self.n_hidden_layers )
             ]
         )
 
@@ -85,7 +91,7 @@ class Encoder_2D(nn.Module):
 
         # set up linear outout layer
         self.f_linear_out = nn.Linear(
-            self.fc_output_size,
+            self.fc_outputsize,
             self.params.latent_space_dimn
         )
 
@@ -98,15 +104,14 @@ class Encoder_2D(nn.Module):
         size of fc output right before latent space
         """
         
-        return self.params.dimn_tensor.nX * self.params.dimn_tensor.nY * self.params.hidden_layers_sizes[-1]
+        return self.params.dimn_tensor.nX * self.params.dimn_tensor.nY * self.params.hidden_layer_sizes[-1]
 
     def forward(self, x):
 
         for conv_i in self.f_conv:
             x = F.relu(conv_i(x))
 
-        batchsize, features, nX, nY = self.params.dimn_tensor.get_pytorch_4dshape()
-        x = self.f_linear_out( x.reshape(batchsize, 1, features * nX * nY) )
+        x = self.f_linear_out( x.reshape(self.params.dimn_tensor.batchsize, 1, self.fc_outputsize) )
 
         return x
 
@@ -131,14 +136,14 @@ class Decoder_2D(nn.Module):
         self.fc_outputsize = encoder.fc_outputsize
 
         self.params = Conv2D_params( encoder.params.dimn_tensor , 
-                                     encoder.params.get_hidden_layer_sizes_reversed() ,
-                                     encoder.params.get_ksize_reversed() ,
+                                     encoder.params.n_features_layers_reversed ,
+                                     encoder.params.ksize_reversed ,
                                      encoder.params.latent_space_dimn )
 
     def forward(self, x):
 
         x = self.f_linear_in(x).reshape(
-            x.size()[0], self.params.hidden_layer_sizes[0], self.params.nX, self.params.nY
+            x.size()[0], self.params.hidden_layer_sizes[0], self.params.dimn_tensor.nX, self.params.dimn_tensor.nY
         )
 
         for conv_i in self.f_conv[:-1]:
