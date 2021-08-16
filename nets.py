@@ -1,3 +1,4 @@
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import dataclass
@@ -170,4 +171,4 @@ class AutoEncoder_2D(nn.Module):
 
     def get_latent_space_coordinates(self, x):
 
-        return self.encoder(x)
+        return np.squeeze( self.encoder(x).detach().numpy() )

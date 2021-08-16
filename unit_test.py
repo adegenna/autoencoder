@@ -30,6 +30,8 @@ class Test_one( unittest.TestCase ):
 
         autoencoder = AutoEncoder_2D( self.encoder_params )
         self.assertTrue( autoencoder(self.X).shape == self.X.shape )
+        self.assertTrue( autoencoder.get_latent_space_coordinates(self.X).shape == \
+            ( self.input_data_shape.batchsize , self.encoder_params.latent_space_dimn ) )
 
 if __name__ == '__main__':
 
