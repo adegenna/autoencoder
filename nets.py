@@ -1,6 +1,7 @@
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
 from dataclasses import dataclass
 from typing import List
 
@@ -19,6 +20,28 @@ class Data4DTensorShape:
 
     def get_pytorch_4dshape( self ):
         return ( self.batchsize , self.channels , self.nX , self.nY )
+
+@dataclass
+class PytorchData4DTensor:
+
+    """
+    really simple class for managing 4D tensors of shape ( batchsize , features , nX , nY )
+    """
+
+    X : torch.tensor
+    
+    def __post_init__( self ):
+
+        self.batchsize , self.features , self.nX , self.nY = self.X.shape
+
+    def get_data_elements( self , idx_data : int ):
+        
+        return self.X[ idx_data ]
+
+    def get_features( self , idx_data : int , idx_feature : int ):
+
+        return self.X[ idx_data , idx_feature ]
+    
 
 
 @dataclass
@@ -111,8 +134,8 @@ class Encoder_2D(nn.Module):
 
         for conv_i in self.f_conv:
             x = F.relu(conv_i(x))
-
-        x = self.f_linear_out( x.reshape(self.params.dimn_tensor.batchsize, 1, self.fc_outputsize) )
+        
+        x = self.f_linear_out( x.reshape( x.shape[0] , self.fc_outputsize) )
 
         return x
 
