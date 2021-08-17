@@ -7,7 +7,7 @@ from train_and_test import TrainingDataParameters
 from nets import *
 
 
-def setup( ):
+def setup( output_dir : str ):
 
     input_data_shape = Data4DTensorShape( 128,1,128,128 )
     encoder_params   = Conv2D_params( input_data_shape , \
@@ -18,7 +18,7 @@ def setup( ):
     net           = AutoEncoder_2D( encoder_params )
     cost_function = torch.nn.MSELoss()
     optimizer     = torch.optim.Adam( net.parameters() , lr=0.001 )
-    ptrain        = TrainingDataParameters( 2 , 100 , 16 , './nn_' )
+    ptrain        = TrainingDataParameters( 2 , 2 , 16 , output_dir + '/nn_' )
 
     if torch.cuda.is_available():
         net = net.cuda()

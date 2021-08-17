@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.backends.backend_pdf import PdfPages
+import sys
 
 from nets import *
 from example_auto2D import *
@@ -22,9 +23,11 @@ def multipage(filename, figs=None, dpi=200):
 if __name__ == '__main__':
 
     if torch.cuda.is_available():
-        print(' cuda available, using gpus ')
-    
-    autoencoder , cost_function , optimizer , ptrain = setup()
+        print( 'cuda available, using gpus' )
+
+    print(f"output dir : {sys.argv[1]}")
+
+    autoencoder , cost_function , optimizer , ptrain = setup( sys.argv[1] )
 
     xy0 , X = get_nn_input_gaussian( autoencoder.encoder.params , 2 )
 
@@ -40,4 +43,4 @@ if __name__ == '__main__':
     plt.figure()
     plt.semilogy( Jtrain )
 
-    multipage( 'allfigs.pdf' , figs=None , dpi=200 )
+    multipage( sys.argv[1] + '/allfigs.pdf' , figs=None , dpi=200 )
