@@ -1,7 +1,8 @@
 import numpy as numpy
 import matplotlib.pyplot as plt
 import torch
-from typing import List , Callable , Union
+from torch.autograd import Variable
+from typing import List , Callable, Tuple , Union
 from train_and_test import TrainingDataParameters
 
 from nets import *
@@ -52,7 +53,7 @@ def get_nn_input_gaussian( params : Conv2D_params , d_compressed : int = 2 ) -> 
     return list(zip(x0,y0)) , X
 
 
-def plot_latent( xy_2d : List[ Union[ float , float ] ] ):
+def plot_latent( xy_2d : List[ Tuple[ float , float ] ] ):
     
     plt.figure()
     plt.scatter( [ xi for xi,yi in xy_2d ] , [ yi for xi,yi in xy_2d ] , c=np.arange(len(xy_2d)) , cmap=plt.cm.get_cmap('coolwarm') )
@@ -68,3 +69,27 @@ def plot_data( X : PytorchData4DTensor ):
         plt.subplot(2,2,i+1)
         plt.contourf( xx , yy , np.squeeze( X.get_data_elements( i * X.batchsize // 4 ) ) )
         plt.gca().set_aspect('equal')
+
+
+def load_and_analyze_results( savefile : str , 
+                              X : Union[ PytorchData4DTensor , None ] = None ):
+
+    net = torch.load( savefile )
+
+    if X is None:
+        xy0 , X = get_nn_input_gaussian( net.encoder.params , 2 )
+    
+    xylatent = net.get_latent_space_coordinates( X )
+    
+    plot_data( PytorchData4DTensor( X ) )
+    plot_latent( xy0 )
+
+    plot_data( PytorchData4DTensor( net.cpu()( Variable(X) ).detach().numpy() ) )
+    plot_latent( xylatent )
+
+
+if __name__ == '__main__':
+
+    load_and_analyze_results( input('pt savefile : ') )
+
+    plt.show()
