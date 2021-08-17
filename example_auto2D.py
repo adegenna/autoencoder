@@ -18,7 +18,10 @@ def setup( ):
     net           = AutoEncoder_2D( encoder_params )
     cost_function = torch.nn.MSELoss()
     optimizer     = torch.optim.Adam( net.parameters() , lr=0.001 )
-    ptrain        = TrainingDataParameters( 100 , 100 , 16 , './nn_' )
+    ptrain        = TrainingDataParameters( 2 , 100 , 16 , './nn_' )
+
+    if torch.cuda.is_available():
+        net = net.cuda()
 
     return net , cost_function , optimizer , ptrain
 

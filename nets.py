@@ -193,5 +193,7 @@ class AutoEncoder_2D(nn.Module):
         return self.decoder(self.encoder(x))
 
     def get_latent_space_coordinates(self, x):
-
+        
+        if torch.cuda.is_available():
+            return np.squeeze( self.encoder(x.cuda()).detach().cpu().numpy() )
         return np.squeeze( self.encoder(x).detach().numpy() )

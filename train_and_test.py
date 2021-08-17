@@ -19,12 +19,16 @@ class TrainingDataParameters:
     fileout_name      : str = './nn_'
 
 
-
 def train( autoencoder   : AutoEncoder_2D , 
            X             : PytorchData4DTensor ,
            optimizer     : torch.optim ,
            cost_function : Callable[ [ torch.tensor , torch.tensor ] , float ] , 
            ptrain        : TrainingDataParameters ):
+
+    def cuda_cost( xj ):
+        if torch.cuda.is_available():
+            return cost_function( Variable( xj ).cuda() , autoencoder( Variable( xj ).cuda() ) )
+        return cost_function( Variable( xj ) , autoencoder( Variable( xj ) ) )
 
     batchsize , features , nX , nY = autoencoder.encoder.params.dimn_tensor.get_pytorch_4dshape()
 
@@ -41,15 +45,9 @@ def train( autoencoder   : AutoEncoder_2D ,
 
             xj   = X.get_data_elements( torch.randint( 0 , batchsize , ( ptrain.minibatch_size , ) ) )
             
-            cost  = cost_function( Variable( xj ) , autoencoder( Variable( xj ) ) )
+            cost  = cuda_cost( xj )
 
             cost.backward()
-
-        # for j in range( ptrain.minibatch_size ):
-            
-        #     cost  = cost_function( Variable( xi[j].unsqueeze(0) ) , autoencoder( Variable( xi[j].unsqueeze(0) ) ) )
-            
-        #     cost.backward()
         
         optimizer.step()
         J.append( cost )
