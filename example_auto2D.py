@@ -4,6 +4,7 @@ import torch
 from torch.autograd import Variable
 from typing import List , Callable, Tuple , Union
 from train_and_test import TrainingDataParameters
+from utils_postproc import * # from https://github.com/adegenna/cahnhilliard_2d
 
 from nets import *
 
@@ -19,7 +20,7 @@ def setup( output_dir : str ):
     net           = AutoEncoder_2D( encoder_params )
     cost_function = torch.nn.MSELoss()
     optimizer     = torch.optim.Adam( net.parameters() , lr=0.001 )
-    ptrain        = TrainingDataParameters( 2 , 2 , 16 , output_dir + '/nn_' )
+    ptrain        = TrainingDataParameters( 1000 , 100 , 16 , output_dir + '/nn_' )
 
     if torch.cuda.is_available():
         net = net.cuda()
@@ -60,32 +61,38 @@ def plot_latent( xy_2d : List[ Tuple[ float , float ] ] ):
     plt.gca().set_aspect('equal')
 
 
-def plot_data( X : PytorchData4DTensor ):
+def plot_data( X : PytorchData4DTensor , plotx : int = 2 , ploty : int = 2 ):
 
     xx,yy = np.meshgrid( np.arange( X.nX ) , np.arange( X.nY ) )
     
     plt.figure()
-    for i in range(4):
-        plt.subplot(2,2,i+1)
-        plt.contourf( xx , yy , np.squeeze( X.get_data_elements( i * X.batchsize // 4 ) ) )
+    for i in range( plotx * ploty ):
+        plt.subplot( plotx , ploty , i+1 )
+        plt.contourf( xx , yy , np.squeeze( X.get_data_elements( i * X.batchsize // (plotx*ploty) ) ) )
         plt.gca().set_aspect('equal')
 
 
 def load_and_analyze_results( savefile : str , 
-                              X : Union[ PytorchData4DTensor , None ] = None ):
+                              X : PytorchData4DTensor = None,
+                              xy0 : List[ Tuple[ float , float ] ] = None, 
+                              plotx : int = 2 ,
+                              ploty : int = 2 ):
 
     net = torch.load( savefile )
 
     if X is None:
         xy0 , X = get_nn_input_gaussian( net.encoder.params , 2 )
-    
-    xylatent = net.get_latent_space_coordinates( X )
-    
-    plot_data( PytorchData4DTensor( X ) )
-    plot_latent( xy0 )
+        X = PytorchData4DTensor(X)
 
-    plot_data( PytorchData4DTensor( net.cpu()( Variable(X) ).detach().numpy() ) )
-    plot_latent( xylatent )
+    if xy0 is not None:
+        plot_latent( xy0 )
+
+    data = X.X.to('cuda')
+    net = net.to('cuda')
+
+    plot_data( X , plotx , ploty )
+    plot_data( PytorchData4DTensor( net( Variable(data) ).cpu().detach().numpy() ) , plotx , ploty )
+    plot_latent( net.get_latent_space_coordinates( data ) )
 
 
 if __name__ == '__main__':

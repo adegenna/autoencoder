@@ -58,7 +58,7 @@ def train( autoencoder   : AutoEncoder_2D ,
             print( "Saving current autoencoder to disk" )
             torch.save( autoencoder , ptrain.fileout_name + str(i+1) + '.pt' )
             
-    return J
+    return [ ji.detach().cpu().item() for ji in J ]
 
 
 
