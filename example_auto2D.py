@@ -4,7 +4,6 @@ import torch
 from torch.autograd import Variable
 from typing import List , Callable, Tuple , Union
 from train_and_test import TrainingDataParameters
-from utils_postproc import * # from https://github.com/adegenna/cahnhilliard_2d
 
 from nets import *
 
